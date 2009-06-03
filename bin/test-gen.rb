@@ -28,9 +28,9 @@ def normalize(n)
   n - n % 60
 end
 
-def generate_id
+def generate_id(len = 15)
   s = ''
-  15.times { s << 97 + rand(26) }
+  len.times { s << 97 + rand(26) }
   s.freeze
 end
 
