@@ -1,0 +1,9 @@
+# backup files
+*.bak
+*~
+
+# vim swap files
+.*.swp
+
+# java build artifacts
+test/JavaAllocationTest/build/

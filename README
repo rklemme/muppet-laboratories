@@ -4,3 +4,7 @@ This project contains the code for the blog series
 
 Directories
 bin/ -- binary executables
+
+test/JavaAllocationTest -- test to demonstrate the overhead of
+  allocating two additional objects per record
+
