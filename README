@@ -8,3 +8,5 @@ bin/ -- binary executables
 test/JavaAllocationTest -- test to demonstrate the overhead of
   allocating two additional objects per record
 
+lib -- Implementation of the Animal
+
