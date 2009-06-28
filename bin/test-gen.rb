@@ -117,9 +117,9 @@ while t < end_time
   # create new entries
   commands.times do
     id = generate_id
-    tx.t = t
+    tx.t = t + rand(60_000) / 1000.0
 
-    entries.add(Entry.create(tx.tic, id, 'START'))
+    entries.add(Entry.create(tx.t, id, 'START'))
 
     (2 + rand(8)).times do
       pick = rand(10)
