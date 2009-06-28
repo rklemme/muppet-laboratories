@@ -31,9 +31,8 @@ Animal.main do
     end
   end
 
-  def initial_line?
-    time_stamp
-  end
+  alias initial_line? time_stamp
+
 end
 
 # EOF
