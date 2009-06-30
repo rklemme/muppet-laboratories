@@ -23,7 +23,7 @@ Animal.main do
        \s+
        }x =~ line
       @time_stamp = Time.local $1.to_i, $2.to_i, $3.to_i,
-	$4.to_i, $5.to_i, $6.to_f
+        $4.to_i, $5.to_i, $6.to_f
       @interaction_id = $7
     else
       @time_stamp = nil

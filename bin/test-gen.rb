@@ -16,10 +16,10 @@ MESSAGES = [
   'SET',
   <<EOS
 java.io.FileNotFoundException: fred.txt
-	at java.io.FileInputStream.<init>(FileInputStream.java)
-	at java.io.FileInputStream.<init>(FileInputStream.java)
-	at ExTest.readMyFile(ExTest.java:19)
-	at ExTest.main(ExTest.java:7)
+        at java.io.FileInputStream.<init>(FileInputStream.java)
+        at java.io.FileInputStream.<init>(FileInputStream.java)
+        at ExTest.readMyFile(ExTest.java:19)
+        at ExTest.main(ExTest.java:7)
 EOS
 ]
 
@@ -44,10 +44,10 @@ end
 Entry = Struct.new :time, :line do
   def self.create(time, id, message)
     t = case time
-	when Time then time
-	when Integer, Float then Time.at(time)
-	else Time.at(time.to_f)
-	end
+        when Time then time
+        when Integer, Float then Time.at(time)
+        else Time.at(time.to_f)
+        end
     new(time, "#{t.strftime(TIME_FMT)} #{id} #{message}")
   end
 
@@ -82,7 +82,7 @@ OptionParser.new do |opts|
   opts.on '-d', '--duration [MINUTES]', Integer, "Duration (default: #{DEFAULT_DURATION})" do |v|
     abort "ERROR: illegal duration: #{v}" if v <= 0
     duration = v
-end
+  end
 
   opts.on '-n', '--new [COMMANDS]', Integer,
     "Amount of new interactions per minute (default: #{commands})" do |v|
