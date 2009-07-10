@@ -11,12 +11,19 @@ module Animal
       def followup(iap, line) :yes end
     end.new
 
-    attr_reader :options, :filter
+    attr_reader :options, :filter, :files
     attr_accessor :parser
 
     def initialize
       @filter = YES
-      @processors = Hash.new
+      @processors = LRUHash.new 50_000
+      @processors.release_proc = Proc.new {|id, pro| pro.finish}
+
+      @files = LRUHash.new 250 do |h, file_name|
+        h[file_name] = File.open(file_name, 'a')
+      end
+
+      @files.release_proc = Proc.new {|fn, io| io.close}
     end
 
     def options=(opts)
@@ -24,13 +31,17 @@ module Animal
 
       # set filter from options
       @filter = YES
+
+      # set LRU size limits from options
+      @processors.max_size = @options.max_size if @options.max_size
+      @files.max_size = @options.max_fd if @options.max_fd
     end
 
     def process_file(file)
       if file == '-'
         process_impl(file, $stdin)
       else
-        File.open(file, "r") do |io|
+        File.open(file, IO::RDONLY) do |io|
           process_impl(file, io)
         end
       end
@@ -44,12 +55,10 @@ module Animal
       self
     end
 
-    # Trigger finish processing after a set of
-    # files has been processed.
+    # Release all resources
     def finish
-      @processors.each do |id, pr|
-        pr.finish
-      end
+      @processors.clear
+      @files.clear
       self
     end
 

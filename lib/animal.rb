@@ -1,6 +1,8 @@
 
 require 'ostruct'
 
+autoload 'LRUHash', 'lruhash'
+
 # Namespace for all the Animal related classes
 # Animal is the project on Ruby Best Practices
 # blog which demonstrates the thought process

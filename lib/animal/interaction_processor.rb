@@ -16,8 +16,8 @@ module Animal
       def process_initial(iap, line, time_stamp)
         case iap.coord.filter.first(iap, line, time_stamp)
         when :yes
-          # we'll improve this once LRU is there
           iap.entries << Entry.new(time_stamp, line)
+          iap.io_open
           INCLUDE
         when :no
           iap.entries.clear
@@ -33,8 +33,8 @@ module Animal
       def process(iap, line, time_stamp)
         case iap.coord.filter.initial(iap, line, time_stamp)
         when :yes
-          # we'll improve this once LRU is there
           iap.entries << Entry.new(time_stamp, line)
+          iap.io_open
           INCLUDE
         when :no
           iap.entries.clear
@@ -50,8 +50,7 @@ module Animal
       def append_line(iap, line)
         case iap.coord.filter.followup(iap, line)
         when :yes
-          # we'll improve this once LRU is there
-          l = iap.entries.last and l.line << line
+          iap.io_open.puts line
           INCLUDE
         when :no
           iap.entries.clear
@@ -67,17 +66,17 @@ module Animal
 
     INCLUDE = Class.new do
       def process_initial(iap, line, time_stamp)
-        iap.entries << Entry.new(time_stamp, line)
+        iap.io_get.puts line
         self
       end
 
       def process(iap, line, time_stamp)
-        iap.entries << Entry.new(time_stamp, line)
+        iap.io_get.puts line
         self
       end
 
       def append_line(iap, line)
-        l = iap.entries.last and l.line << line
+        iap.io_get.puts line
         self
       end
     end.new
@@ -120,14 +119,24 @@ module Animal
       @state = @state.append_line(self, line)
     end
 
+    def io_open
+      fn = file_name
+      FileUtils.mkdir_p(File.dirname(fn))
+      # overwrite the first time:
+      @io = @coord.files[file_name] = File.open(fn, "w")
+      @io.puts(@entries.map(&:line))
+      @entries = nil
+      @io      
+    end
+
+    def io_get
+      @io = @coord.files[file_name] if @io.closed?
+      @io
+    end
+
     def finish
-      # write out to file...
-      unless @entries.empty? 
-        fn = file_name
-        FileUtils.mkdir_p(File.dirname(fn))
-        File.open(fn, "w") do |io|
-          io.puts @entries.map(&:line)
-        end
+      unless @io && @io.closed?
+        @coord.files.delete(file_name)
       end
     end
 
@@ -136,11 +145,12 @@ module Animal
     # calculate the file name, this fails if
     # there are no entries!
     def file_name
-      ts = @entries.first.time_stamp
+      @ts ||= @entries.first.time_stamp
       File.join(@coord.options.output_dir,
-                ts.strftime('%Y-%m-%d'),
-                ts.strftime('%H-%M'),
-                ts.strftime('%S.%3N-') + id)
+                @ts.strftime('%Y-%m-%d'),
+                @ts.strftime('%H-%M'),
+                @ts.strftime('%S.%3N-') + id)
     end
   end
 end
+
