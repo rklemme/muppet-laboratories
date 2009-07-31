@@ -13,9 +13,7 @@ class LRUHash
   attr_accessor :default, :default_proc, :release_proc
 
   def initialize(max_size, default_value = nil, &block)
-    raise ArgumentError, 'Invalid max_size: %p' % max_size unless max_size > 0
-
-    @max_size = max_size.to_i
+    @max_size = normalize_max(max_size)
     @default = default_value
     @default_proc = block
 
@@ -26,14 +24,9 @@ class LRUHash
 
   def each_pair
     if block_given?
-      n = @head.succ
-
-      until n.equal? @tail
-        yield n.key, n.value
-        n = n.succ
+      each_node do |n|
+        yield [n.key, n.value]
       end
-
-      self
     else
       enum_for :each_pair
     end
@@ -41,10 +34,11 @@ class LRUHash
 
   alias each each_pair
 
-  def each_key(&b)
-    if b
-      @h.each_key(&b)
-      self
+  def each_key
+    if block_given?
+      each_node do |n|
+        yield n.key
+      end
     else
       enum_for :each_key
     end
@@ -52,8 +46,9 @@ class LRUHash
 
   def each_value
     if block_given?
-      each_pair {|k, v| yield v}
-      self
+      each_node do |n|
+        yield n.value
+      end
     else
       enum_for :each_value
     end
@@ -100,7 +95,7 @@ class LRUHash
   alias include? has_key?
 
   def has_value?(value)
-    each do |k, v|
+    each_pair do |k, v|
       return true if value.eql? v
     end
 
@@ -123,13 +118,17 @@ class LRUHash
   end
 
   def rassoc(value)
-    @h.each do |k, n|
+    each_node do |n|
       if value.eql? n.value
         front(n)
         return [n.key, n.value]
       end
     end
     nil
+  end
+
+  def key(value)
+    pair = rassoc(value) and pair.first
   end
 
   def store(key, value)
@@ -161,19 +160,13 @@ class LRUHash
   end
 
   def delete_if
-    n = @head.succ
-
-    until n.equal? @tail
-      succ = n.succ
+    each_node do |n|
       remove_node n if yield n.key, n.value
-      n = succ
     end
-
-    self
   end
 
   def max_size=(limit)
-    limit = limit.to_i
+    limit = normalize_max(limit)
 
     while size > limit
       delete_oldest
@@ -226,12 +219,25 @@ class LRUHash
   end
 
   private
+  # iterate nodes
+  def each_node
+    n = @head.succ
+
+    until n.equal? @tail
+      succ = n.succ
+      yield n
+      n = succ
+    end
+
+    self
+  end
+
   # move node to front
   def front(node)
     node.insert_after(@head)
   end
 
-  # remove the node and invoke the cleanup proc
+  # remove the node and invoke release_proc
   # if set
   def remove_node(node)
     n = @h.delete(node.key)
@@ -245,5 +251,14 @@ class LRUHash
     n = @tail.pred
     raise "Cannot delete from empty hash" if @head.equal? n
     remove_node n
+  end
+
+  # Normalize the argument in order to be usable as max_size
+  # criterion is that n.to_i must be an Integer and it must
+  # be larger than zero.
+  def normalize_max(n)
+    n = n.to_i
+    raise ArgumentError, 'Invalid max_size: %p' % n unless Integer === n && n > 0
+    n
   end
 end
