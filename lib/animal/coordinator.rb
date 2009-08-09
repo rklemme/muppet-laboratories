@@ -5,25 +5,15 @@ module Animal
 
   class Coordinator
 
-    YES = Class.new do
-      def first(iap, line, ts) :yes end
-      def initial(iap, line, ts) :yes end
-      def followup(iap, line) :yes end
-    end.new
-
-    attr_reader :options, :filter, :files
+    YES = lambda {|processor| true}
+    
+    attr_reader :options, :filter
     attr_accessor :parser
 
     def initialize
       @filter = YES
       @processors = LRUHash.new 50_000
       @processors.release_proc = Proc.new {|id, pro| pro.finish}
-
-      @files = LRUHash.new 250 do |h, file_name|
-        h[file_name] = File.open(file_name, 'a')
-      end
-
-      @files.release_proc = Proc.new {|fn, io| io.close}
     end
 
     def options=(opts)
@@ -34,7 +24,6 @@ module Animal
 
       # set LRU size limits from options
       @processors.max_size = @options.max_size if @options.max_size
-      @files.max_size = @options.max_fd if @options.max_fd
     end
 
     def process_file(file)
@@ -58,7 +47,6 @@ module Animal
     # Release all resources
     def finish
       @processors.clear
-      @files.clear
       self
     end
 
