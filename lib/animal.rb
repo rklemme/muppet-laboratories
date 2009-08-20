@@ -1,7 +1,10 @@
 
 require 'ostruct'
+require 'optparse'
+require 'optparse/time'
 
 autoload 'LRUHash', 'lruhash'
+autoload 'Set', 'set'
 
 # Namespace for all the Animal related classes
 # Animal is the project on Ruby Best Practices
@@ -14,7 +17,59 @@ module Animal
   # there must be file names.
   def self.parse_command_line(argv = ::ARGV) 
     o = OpenStruct.new(:output_dir => ".")
+
     # parse
+    OptionParser.new do |opts|
+      opts.on '-d', '--dir=DIRECTORY', 'Output directory ' do |v|
+        o.output_dir = v
+      end
+
+      opts.on '-r', '--rx=REGEXP', ::Regexp, 'Regular expression matched',
+      'against log line text' do |v|
+        o.rx = v
+      end
+
+      opts.on '-t', '--time=TIME', ::Time, 'timestamp' do |v|
+        o.ts = v
+      end
+
+      opts.on '-s', '--start=TIME', ::Time, 'start timestamp' do |v|
+        o.start_ts = v
+      end
+
+      opts.on '-e', '--end=TIME', ::Time, 'end timestamp' do |v|
+        o.end_ts = v
+      end
+
+      opts.on '--ids=ID_LIST', ::Array, 'Comma separated list of interaction ids' do |v|
+        (o.ids ||= Set.new).merge v
+      end
+
+      opts.on '--id-file=FILE', 'File with ids one per line',
+       '(empty lines are ignored)' do |v|
+        s = o.ids ||= Set.new
+
+        File.foreach v do |line|
+          line.strip!
+          s << line unless line == ''
+        end
+       end
+
+      opts.on_tail '-h', '--help' do
+        puts opts
+        exit 0
+      end
+    end.parse! argv
+
+    raise 'Only one of time or (start, end) allowed' if o.ts && (o.start_ts || o.end_ts)
+    raise 'Missing end timestamp' if o.start_ts && !o.end_ts
+    raise 'Missing start timestamp' if !o.start_ts && o.end_ts
+
+    if o.ids && (o.ts || o.start_ts || o.end_ts)
+      warn 'WARNING: Ignoring time filters with ids given' 
+      o.ts = o.start_ts = o.end_ts = nil
+    end
+
     o
   end
 

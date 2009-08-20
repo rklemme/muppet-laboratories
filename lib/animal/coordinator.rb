@@ -6,7 +6,7 @@ module Animal
   class Coordinator
 
     YES = lambda {|processor| true}
-    
+
     attr_reader :options, :filter
     attr_accessor :parser
 
@@ -20,7 +20,7 @@ module Animal
       @options = opts
 
       # set filter from options
-      @filter = YES
+      @filter = create_filter(opts)
 
       # set LRU size limits from options
       @processors.max_size = @options.max_size if @options.max_size
@@ -85,6 +85,35 @@ module Animal
         end
       end
     end
-  end
 
+    def create_filter(opts)
+      f = case
+          when opts.ids
+            lambda {|ip| opts.ids.include? ip.id}
+          when opts.ts
+            lambda do |ip|
+              ip.entries.first.time_stamp <= opts.time_stamp &&
+                ip.entries.last.time_stamp >= opts.time_stamp
+            end
+          when opts.start_time
+            lambda do |ip|
+              ip.entries.last.time_stamp >= opts.start_ts && 
+                ip.entries.first.time_stamp <= opts.end_ts
+            end
+          end
+
+      case
+      when f && opts.rx
+        lambda {|ip| f[ip] && ip.entries.any? {|e| opts.rx =~ e.line}}
+      when opts.rx
+        lambda {|ip| ip.entries.any? {|e| opts.rx =~ e.line}}
+      when f
+        f
+      else
+        YES
+      end
+    end
+
+  end
 end
+
