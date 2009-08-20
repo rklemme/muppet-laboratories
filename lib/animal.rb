@@ -55,6 +55,11 @@ module Animal
         end
        end
 
+      opts.on '--buffer=INTERACTIONS', ::Integer,
+        'Max no. of interactions to keep in memory' do |v|
+        o.max_size = v
+        end
+
       opts.on_tail '-h', '--help' do
         puts opts
         exit 0
