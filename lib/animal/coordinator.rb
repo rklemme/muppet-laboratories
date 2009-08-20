@@ -87,26 +87,35 @@ module Animal
     end
 
     def create_filter(opts)
+      # store in local variables to ensure
+      # ensure values do not get changed
+      # and a small speed improvement
+      o_ids = opts.ids
+      o_ts = opts.ts
+      o_start_ts = opts.start_ts
+      o_end_ts = opts.end_ts
+      o_rx = opts.rx
+
       f = case
-          when opts.ids
-            lambda {|ip| opts.ids.include? ip.id}
-          when opts.ts
-            lambda do |ip|
-              ip.entries.first.time_stamp <= opts.time_stamp &&
-                ip.entries.last.time_stamp >= opts.time_stamp
-            end
-          when opts.start_time
-            lambda do |ip|
-              ip.entries.last.time_stamp >= opts.start_ts && 
-                ip.entries.first.time_stamp <= opts.end_ts
-            end
+          when o_ids
+            lambda {|ip| o_ids.include? ip.id}
+          when o_ts
+            lambda {|ip|
+              ip.entries.first.time_stamp <= o_ts &&
+                ip.entries.last.time_stamp >= o_ts
+            }
+          when o_start_ts && o_end_ts
+            lambda { |ip|
+              ip.entries.last.time_stamp >= o_start_ts && 
+                ip.entries.first.time_stamp <= o_end_ts
+            }
           end
 
       case
-      when f && opts.rx
-        lambda {|ip| f[ip] && ip.entries.any? {|e| opts.rx =~ e.line}}
-      when opts.rx
-        lambda {|ip| ip.entries.any? {|e| opts.rx =~ e.line}}
+      when f && o_rx
+        lambda {|ip| f[ip] && ip.entries.any? {|e| o_rx =~ e.line}}
+      when o_rx
+        lambda {|ip| ip.entries.any? {|e| o_rx =~ e.line}}
       when f
         f
       else
