@@ -98,6 +98,8 @@ module Animal
 
       f = case
           when o_ids
+            warn 'WARNING: Ignoring time filters with ids given' if
+            o_ts || o_start_ts || o_end_ts
             lambda {|ip| o_ids.include? ip.id}
           when o_ts
             lambda {|ip|

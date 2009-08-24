@@ -16,7 +16,7 @@ module Animal
   # Options are removed from the argument so what is left in
   # there must be file names.
   def self.parse_command_line(argv = ::ARGV) 
-    o = OpenStruct.new(:output_dir => ".")
+    o = OpenStruct.new(:output_dir => '.')
 
     # parse
     OptionParser.new do |opts|
@@ -69,11 +69,6 @@ module Animal
     raise 'Only one of time or (start, end) allowed' if o.ts && (o.start_ts || o.end_ts)
     raise 'Missing end timestamp' if o.start_ts && !o.end_ts
     raise 'Missing start timestamp' if !o.start_ts && o.end_ts
-
-    if o.ids && (o.ts || o.start_ts || o.end_ts)
-      warn 'WARNING: Ignoring time filters with ids given' 
-      o.ts = o.start_ts = o.end_ts = nil
-    end
 
     o
   end
