@@ -60,7 +60,7 @@ module Animal
         o.max_size = v
         end
 
-      opts.on_tail '-h', '--help' do
+      opts.on_tail '-h', '--help', 'Print this help' do
         puts opts
         exit 0
       end
@@ -80,13 +80,17 @@ module Animal
   # and will be option parsed and the whole processing will
   # start automatically.
   def self.main(parser = nil, argv = ::ARGV, &class_body)
-    $stderr.puts 'WARNING: ignoring class body' if parser && class_body
-    parser ||= Class.new(&class_body).new
-    options = parse_command_line(argv)
-    coord = Coordinator.new
-    coord.parser = parser
-    coord.options = options
-    coord.process_files argv
+    begin
+      $stderr.puts 'WARNING: ignoring class body' if parser && class_body
+      parser ||= Class.new(&class_body).new
+      options = parse_command_line(argv)
+      coord = Coordinator.new
+      coord.parser = parser
+      coord.options = options
+      coord.process_files argv
+    rescue ::OptionParser::ParseError => e
+      abort "ERROR: #{e.message}"
+    end
   end
 
   # autoload init
