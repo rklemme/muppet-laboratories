@@ -94,13 +94,8 @@ module Animal
   end
 
   # autoload init
-  %w{
-    Coordinator
-    ProcessingStorage
-    FileStatistics
-    InteractionProcessor
-  }.each do |cl|
-    autoload cl, "animal/#{cl.gsub(/([a-z])([A-Z])/, '\\1_\\2').downcase}"
-  end
+  autoload 'Coordinator', 'animal/coordinator'
+  autoload 'FileStatistics', 'animal/file_statistics'
+  autoload 'InteractionProcessor', 'animal/interaction_processor'
 
 end
